@@ -1,0 +1,14 @@
+{
+  "name": "moonlight-english",
+  "version": "1.0.0",
+  "private": true,
+  "description": "深夜来客：两章可以独立运行的英语剧情游戏",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node scripts/build.mjs --templates-only && node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs && node --test tests/*.test.mjs"
+  }
+}

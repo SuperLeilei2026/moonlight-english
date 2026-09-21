@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="敲开一扇门，寻找一只猫。用英语探索、套话和解谜的两章互动故事。无需账号，进度保存在当前浏览器。">
+  <title>深夜来客 · Moonlight English</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./chapters/doorstep.css">
+  <link rel="stylesheet" href="./chapters/midnight.css">
+  <link rel="stylesheet" href="./assets/app.css">
+  <script src="./assets/lucide.min.js" defer></script>
+  <script src="./assets/storage.js" defer></script>
+  <script src="./assets/templates.js" defer></script>
+  <script src="./chapters/doorstep.js" defer></script>
+  <script src="./chapters/midnight.js" defer></script>
+  <script src="./assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#play-area">进入游戏</a>
+  <main class="app-shell">
+    <header class="app-header">
+      <div class="app-name"><i data-lucide="moon-star" aria-hidden="true"></i><div><h1>深夜来客</h1><p>MOONLIGHT ENGLISH</p></div></div>
+      <div class="app-tools"><button type="button" class="quiet-button" id="open-records"><i data-lucide="book-open" aria-hidden="true"></i>故事记录</button><button type="button" class="quiet-button" id="open-about" aria-label="玩法与存档说明"><i data-lucide="circle-help" aria-hidden="true"></i><span class="wide-label">怎么玩</span></button></div>
+    </header>
+    <nav class="chapter-nav" aria-label="选择章节">
+      <button type="button" data-chapter="doorstep" aria-pressed="true"><span class="chapter-number">01</span><span><b>借一杯茶</b><small data-chapter-status="doorstep">从敲门开始</small></span><i data-lucide="door-open" aria-hidden="true"></i></button>
+      <button type="button" data-chapter="midnight" aria-pressed="false"><span class="chapter-number">02</span><span><b>消失的屋主</b><small data-chapter-status="midnight">进屋之后的谜案</small></span><i data-lucide="search" aria-hidden="true"></i></button>
+    </nav>
+    <div class="save-line"><span id="chapter-caption">用一句话，改变今晚的故事。</span><span id="save-status" role="status">进度保存在此浏览器</span></div>
+    <section id="play-area" aria-label="游戏场景"></section>
+    <noscript><p class="notice">这个游戏需要浏览器开启 JavaScript。无需账号或 API 密钥。</p></noscript>
+    <footer class="app-footer"><span>原创剧情 · 本机存档</span><span>v1.0.0</span></footer>
+  </main>
+  <dialog id="about-dialog" aria-labelledby="about-title">
+    <div class="dialog-top"><h2 id="about-title">今晚怎么玩</h2><button type="button" class="quiet-button" data-close="about-dialog" aria-label="关闭说明"><i data-lucide="x" aria-hidden="true"></i></button></div>
+    <p>第一章选一句英文回应屋主；第二章可以点人物、检查房间，选中口袋里的物品再出示给对方。答错也可以继续。</p>
+    <p>每次行动会自动保存。回来时会恢复房间、物品和角色关系，对话从当前场景继续。点击章节可以随时切换。</p>
+    <p>这是两章预设剧情游戏。“自由聊天”会整理当前剧情，让你复制到自己的 AI 聊天应用继续。这里没有连接实时 AI、语音识别或发音评分。</p>
+    <p>存档只在当前浏览器里。换设备、无痕浏览或清理浏览器数据，可能丢失进度；它不会上传到 GitHub。可在“故事记录”导出备份。</p>
+  </dialog>
+  <dialog id="records-dialog" aria-labelledby="records-title">
+    <div class="dialog-top"><h2 id="records-title">你的故事记录</h2><button type="button" class="quiet-button" data-close="records-dialog" aria-label="关闭记录"><i data-lucide="x" aria-hidden="true"></i></button></div>
+    <div id="records-content"></div>
+    <div class="dialog-actions"><button type="button" class="solid-button" id="export-save"><i data-lucide="download" aria-hidden="true"></i>导出存档</button><label class="quiet-button import-label" for="import-save"><i data-lucide="upload" aria-hidden="true"></i>恢复备份<input id="import-save" type="file" accept="application/json,.json"></label></div>
+    <p class="dialog-status" id="backup-status" role="status"></p>
+  </dialog>
+  <dialog id="roleplay-dialog" aria-labelledby="roleplay-title">
+    <div class="dialog-top"><h2 id="roleplay-title">把故事接着聊下去</h2><button type="button" class="quiet-button" data-close="roleplay-dialog" aria-label="关闭自由聊天"><i data-lucide="x" aria-hidden="true"></i></button></div>
+    <p>复制下面的剧情，粘贴到你常用的 AI 聊天里。它包含你刚才的选择，角色就能从这里接话；对方支持语音的话，也可以直接开口。</p>
+    <label for="roleplay-prompt">当前剧情</label><textarea id="roleplay-prompt" rows="8" readonly spellcheck="false"></textarea>
+    <div class="dialog-actions"><button type="button" class="solid-button" id="copy-roleplay"><i data-lucide="copy" aria-hidden="true"></i>复制剧情</button><button type="button" class="quiet-button" data-close="roleplay-dialog">回到游戏</button></div>
+    <p class="dialog-status" id="copy-status" role="status">内容尚未发送给任何 AI 服务。</p>
+  </dialog>
+</body>
+</html>
