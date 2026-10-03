@@ -3,7 +3,7 @@
   'use strict';
   const KEY = 'moonlight-english:save:v1';
   const CHAPTERS = ['doorstep', 'midnight'];
-  const ENDINGS = { doorstep: ['laugh', 'cat', 'pigeon'], midnight: ['guest', 'club', 'pigeon'] };
+  const ENDINGS = { doorstep: ['laugh', 'cat', 'pigeon'], midnight: ['guest', 'club', 'concert', 'pigeon'] };
   const copy = value => JSON.parse(JSON.stringify(value));
   const text = (value, length = 1000) => typeof value === 'string' ? value.slice(0, length) : '';
   const oneOf = (value, choices, fallback) => choices.includes(value) ? value : fallback;
@@ -20,6 +20,7 @@
       ending: oneOf(value.ending, ENDINGS.midnight, ''),
       view: oneOf(value.view,['room','rhythm','ending'],'room'),
       current: text(value.current), currentZh: text(value.currentZh),
+      practiceText: text(value.practiceText, 500),
       sound: value.sound !== false, subtitles: value.subtitles !== false,
       beats: Array.isArray(value.beats) ? value.beats.filter(beat => ['tap','pause'].includes(beat)).slice(0,7) : [],
       history: Array.isArray(value.history) ? value.history.filter(item => typeof item === 'string').slice(-120).map(item => text(item)) : []

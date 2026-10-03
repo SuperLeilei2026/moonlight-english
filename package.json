@@ -1,6 +1,6 @@
 {
   "name": "moonlight-english",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "深夜来客：两章可以独立运行的英语剧情游戏",
   "type": "module",

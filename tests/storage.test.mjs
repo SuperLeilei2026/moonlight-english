@@ -9,11 +9,12 @@ const memory=()=>{const values=new Map();return{getItem:key=>values.get(key)??nu
 test('both chapters survive reload including clues, one-use gift and partial rhythm',()=>{
   const backend=memory(),first=create(backend);
   first.save('doorstep',{node:'cat',catSeen:true,sound:false,subtitles:false,history:[{mabel:'Hello.',you:'May I come in?'}]});
-  first.save('midnight',{started:true,room:'greenhouse',bag:['note','spoon'],held:null,offended:true,singer:true,booking:true,beats:['tap','tap','pause'],view:'rhythm'});
+  first.save('midnight',{started:true,room:'greenhouse',bag:['note','spoon'],held:null,offended:true,singer:true,booking:true,practiceText:'Why is your name on this?',beats:['tap','tap','pause'],view:'rhythm'});
   first.ending('doorstep','cat');first.ending('doorstep','cat');
   const reloaded=create(backend);
   assert.equal(reloaded.load('doorstep').catSeen,true);assert.equal(reloaded.load('doorstep').sound,false);
   assert.equal(reloaded.load('midnight').singer,true);assert.equal(reloaded.load('midnight').offended,true);
+  assert.equal(reloaded.load('midnight').practiceText,'Why is your name on this?');
   assert.deepEqual(plain(reloaded.load('midnight').beats),['tap','tap','pause']);
   assert.equal(reloaded.get().lastChapter,'midnight');assert.equal(reloaded.get().endings.length,1);
 });
@@ -37,4 +38,13 @@ test('backup normalization bounds data, rejects foreign items and preserves gift
 test('snapshots do not mutate stored game state by reference',()=>{
   const saved=create(memory());saved.save('doorstep',{node:'owner',history:[{mabel:'Who?',you:'Hello'}]});
   const returned=saved.load('doorstep');returned.node='laugh';returned.history[0].you='changed';assert.equal(saved.load('doorstep').node,'owner');assert.equal(saved.load('doorstep').history[0].you,'Hello');
+});
+test('concert ending survives reload and is recorded only once',()=>{
+  const backend=memory(),saved=create(backend);
+  saved.save('midnight',{started:true,room:'greenhouse',ending:'concert',view:'ending'});
+  saved.ending('midnight','concert');saved.ending('midnight','concert');
+  const reloaded=create(backend);
+  assert.equal(reloaded.load('midnight').ending,'concert');
+  assert.equal(reloaded.load('midnight').view,'ending');
+  assert.deepEqual(plain(reloaded.get().endings),[{chapter:'midnight',id:'concert'}]);
 });
