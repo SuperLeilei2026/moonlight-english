@@ -8,11 +8,12 @@ const plain=value=>JSON.parse(JSON.stringify(value));
 const memory=()=>{const values=new Map();return{getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};};
 test('both chapters survive reload including clues, one-use gift and partial rhythm',()=>{
   const backend=memory(),first=create(backend);
-  first.save('doorstep',{node:'cat',catSeen:true,sound:false,subtitles:false,history:[{mabel:'Hello.',you:'May I come in?'}]});
+  first.save('doorstep',{node:'cat',catSeen:true,sound:false,subtitles:false,history:[{mabel:'Hello.',you:'May I come in?',free:true}]});
   first.save('midnight',{started:true,room:'greenhouse',bag:['note','spoon'],held:null,offended:true,singer:true,booking:true,practiceText:'Why is your name on this?',beats:['tap','tap','pause'],view:'rhythm'});
   first.ending('doorstep','cat');first.ending('doorstep','cat');
   const reloaded=create(backend);
   assert.equal(reloaded.load('doorstep').catSeen,true);assert.equal(reloaded.load('doorstep').sound,false);
+  assert.equal(reloaded.load('doorstep').history[0].free,true);
   assert.equal(reloaded.load('midnight').singer,true);assert.equal(reloaded.load('midnight').offended,true);
   assert.equal(reloaded.load('midnight').practiceText,'Why is your name on this?');
   assert.deepEqual(plain(reloaded.load('midnight').beats),['tap','tap','pause']);

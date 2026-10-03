@@ -6,6 +6,7 @@ window.MoonlightChapters.doorstep = function mountChapter() {
       let active = true;
       let noteTimer;
       let audioContext;
+      let doorSpeech = null;
       const nodes = {
         door: {
           en: 'Before you come in, you need the owner’s permission.',
@@ -120,7 +121,38 @@ window.MoonlightChapters.doorstep = function mountChapter() {
         noteTimer = setTimeout(() => { $('[data-note]').hidden = true; }, 6000);
       }
 
+      function renderDoorPractice(node, holder) {
+        holder.innerHTML = '<div class="practice-kicker">第一句话 · 自己来说</div><p class="practice-prompt">Mabel 说进门需要屋主同意。你可以请求进门，也可以编一个荒唐身份。</p><label for="doorstep-answer">你的英语</label><textarea id="doorstep-answer" class="practice-answer" maxlength="500" placeholder="Say it your way…" spellcheck="true"></textarea><div class="practice-controls"><button class="practice-speech" type="button" data-door-speech aria-pressed="false"><i data-lucide="mic" aria-hidden="true"></i><span data-speech-label>用语音回答</span></button><button class="quiet-button" type="button" data-door-back>看看可选句</button><button class="solid-button" type="button" data-door-submit>这样回答</button></div><p class="practice-status" data-door-status role="status">语音识别由浏览器提供，结果会先显示给你核对；也可以直接打字。</p><div data-door-feedback></div>';
+        const field = holder.querySelector('#doorstep-answer');
+        const status = holder.querySelector('[data-door-status]');
+        const feedback = holder.querySelector('[data-door-feedback]');
+        holder.querySelector('[data-door-back]').addEventListener('click', () => renderChoices(node));
+        holder.querySelector('[data-door-submit]').addEventListener('click', () => {
+          const submittedText = field.value.trim();
+          if (!submittedText) { status.textContent = '先说或写一句英语，再提交。'; status.dataset.state = 'error'; return; }
+          const intent = window.MoonlightPractice.classifyDoorstep(submittedText);
+          const feedbackText = window.MoonlightPractice.doorstepFeedback(intent);
+          const rawTranscript = field.dataset.rawTranscript || '';
+          window.Moonlight.practice.addAttempt({sceneId:'doorstep-permission',rawTranscript,submittedText,inputMode:field.dataset.inputMode==='voice'?'voice':'typed',edited:field.dataset.inputMode==='voice'&&rawTranscript!==submittedText,hintLevel:0,intent,feedback:feedbackText});
+          if (intent === 'other') {
+            const card = document.createElement('div'); card.className = 'practice-feedback'; card.dataset.outcome = 'other'; card.textContent = feedbackText; feedback.replaceChildren(card); field.focus(); return;
+          }
+          doorSpeech?.dispose(); doorSpeech = null;
+          state.history.push({ mabel: node.en, you: submittedText, free: true });
+          const targetId = intent === 'cat' ? 'cat' : intent === 'curtain' ? 'curtain' : 'owner';
+          state.node = targetId;
+          void playSound(nodes[targetId].end ? 'win' : 'choose');
+          render();
+          $('[data-last]').textContent = `你：${submittedText}`; $('[data-last]').hidden = false;
+          notice(feedbackText);
+          window.dispatchEvent(new CustomEvent('moonlight-practice-update'));
+        });
+        doorSpeech = window.MoonlightPractice.bindSpeech({button:holder.querySelector('[data-door-speech]'),field,status});
+        globalThis.lucide?.createIcons({ attrs: { width: 18, height: 18 } });
+      }
+
       function renderChoices(node) {
+        doorSpeech?.dispose(); doorSpeech = null;
         const holder = $('[data-choices]');
         holder.replaceChildren();
         node.choices.filter(choice => !choice.clue || state.catSeen).forEach((choice, index) => {
@@ -163,6 +195,12 @@ window.MoonlightChapters.doorstep = function mountChapter() {
           });
           holder.append(button);
         });
+        if (state.node === 'door') {
+          const speak = document.createElement('button'); speak.type = 'button'; speak.className = 'mv-choice mv-start';
+          speak.innerHTML = '<i data-lucide="mic" aria-hidden="true"></i><span><span lang="en">Say it yourself.</span><small>不选答案，直接开口</small></span><span class="mv-choice-arrow" aria-hidden="true">↗</span>';
+          speak.addEventListener('click', () => renderDoorPractice(node, holder)); holder.prepend(speak);
+          globalThis.lucide?.createIcons({ attrs: { width: 18, height: 18 } });
+        }
       }
 
       function render() {
@@ -234,8 +272,8 @@ window.MoonlightChapters.doorstep = function mountChapter() {
         const button = event.currentTarget;
         const message = $('[data-host-message]');
         const node = nodes[state.node];
-        const transcript = state.history.map(turn => `Mabel: ${turn.mabel}\n我选了: ${turn.you}`).join('\n');
-        const prompt = `请接着陪我玩「深夜来客」英语即兴游戏。以下是虚构剧情状态，不是我的真实经历。\n场景：月夜，我披着仍挂价签的斗篷，想让端茶的 Mabel 邀请我进去。真正的屋主是她的猫。\n当前状态：${state.node === 'intro' ? '还没敲门' : node.title || state.node}。${node ? `Mabel 刚说：${node.en}` : ''}\n我${state.catSeen ? '已经' : '还没'}点击猫查看 OWNER 项圈线索。\n我在预设分支中选择的台词（这不是我的自由表达，不能据此评估英语水平）：\n${transcript || '尚未选择'}\n现在转为自由对话。先按当前局面扮演 Mabel，用 A2–B1 难度的一两句自然英文接话，留一个让我回应的空间，然后等我回答。若已经成功进门，就从喝茶继续；若失败，就给一个挽回的机会。保留幽默，让我的自由表达影响剧情；不要每句打断纠错，也不要替我说。若我使用的聊天应用支持语音，可提醒我用语音回复。结束后，再根据我实际自由表达的内容给两条简短中文反馈。不要说已经分析了我的发音。`;
+        const transcript = state.history.map(turn => `Mabel: ${turn.mabel}\n${turn.free ? '我自由说了' : '我选了预设句'}: ${turn.you}`).join('\n');
+        const prompt = `请接着陪我玩「深夜来客」英语即兴游戏。以下是虚构剧情状态，不是我的真实经历。\n场景：月夜，我披着仍挂价签的斗篷，想让端茶的 Mabel 邀请我进去。真正的屋主是她的猫。\n当前状态：${state.node === 'intro' ? '还没敲门' : node.title || state.node}。${node ? `Mabel 刚说：${node.en}` : ''}\n我${state.catSeen ? '已经' : '还没'}点击猫查看 OWNER 项圈线索。\n最近的对话记录会明确区分“我自由说了”和“我选了预设句”；只有前者可以用来反馈我的英语：\n${transcript || '尚未选择'}\n现在转为自由对话。先按当前局面扮演 Mabel，用 A2–B1 难度的一两句自然英文接话，留一个让我回应的空间，然后等我回答。若已经成功进门，就从喝茶继续；若失败，就给一个挽回的机会。保留幽默，让我的自由表达影响剧情；不要每句打断纠错，也不要替我说。若我使用的聊天应用支持语音，可提醒我用语音回复。结束后，再根据我实际自由表达的内容给两条简短中文反馈。不要说已经分析了我的发音。`;
         button.disabled = true;
         message.hidden = true;
         try {
@@ -263,5 +301,5 @@ window.MoonlightChapters.doorstep = function mountChapter() {
       if (state.node !== 'intro') render();
       persist();
       globalThis.lucide?.createIcons({ attrs: { width: 18, height: 18 } });
-      return { save: persist, dispose() { persist(); active = false; clearTimeout(noteTimer); root.removeEventListener('click', afterAction); if(audioContext) void audioContext.close().catch(() => {}); } };
+      return { save: persist, dispose() { persist(); active = false; doorSpeech?.dispose(); clearTimeout(noteTimer); root.removeEventListener('click', afterAction); if(audioContext) void audioContext.close().catch(() => {}); } };
 };

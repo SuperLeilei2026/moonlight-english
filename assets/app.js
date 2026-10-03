@@ -128,7 +128,8 @@
       const heading=document.createElement('h3');heading.className='practice-section-title';heading.textContent='自己说过的话';container.append(heading);
       for(const attempt of practiceData.attempts.slice(-5).reverse()){
         const row=document.createElement('div');row.className='practice-attempt';
-        const meta=document.createElement('small');meta.textContent=`${attempt.sceneId==='mabel-ribbon'?'质询 Mabel':'迁移挑战'} · ${attempt.inputMode==='voice'?'语音输入':'文字输入'}${attempt.hintLevel?' · 使用提示':''}`;
+        const scene=attempt.sceneId==='doorstep-permission'?'门口自由回应':attempt.sceneId==='mabel-ribbon'?'质询 Mabel':'迁移挑战';
+        const meta=document.createElement('small');meta.textContent=`${scene} · ${attempt.inputMode==='voice'?'语音输入':'文字输入'}${attempt.hintLevel?' · 使用提示':''}`;
         const quote=document.createElement('blockquote');quote.lang='en';quote.textContent=attempt.submittedText;
         const feedback=document.createElement('p');feedback.textContent=attempt.coachFeedback||attempt.feedback;
         row.append(meta,quote,feedback);container.append(row);

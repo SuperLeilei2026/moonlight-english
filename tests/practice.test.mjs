@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const scope = {Date, Math};
 vm.runInNewContext(fs.readFileSync(new URL('../assets/practice.js', import.meta.url), 'utf8'), scope);
-const {create, classifyMabel, classifyTransfer, mabelFeedback, sanitize, bindSpeech} = scope.MoonlightPractice;
+const {create, classifyDoorstep, classifyMabel, classifyTransfer, mabelFeedback, sanitize, bindSpeech} = scope.MoonlightPractice;
 const plain = value => JSON.parse(JSON.stringify(value));
 const memory = () => { const values = new Map(); return {getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)}; };
 
@@ -17,6 +17,17 @@ test('Mabel intent rules follow meaning instead of exact model answer', () => {
   assert.equal(classifyMabel('I would like more tea.'), 'other');
   assert.match(mabelFeedback('Why your name on this?', 'evidence'), /补一个 is/);
   assert.doesNotMatch(mabelFeedback('Can you explain why your name is on this ribbon?', 'evidence'), /补一个 is/);
+});
+
+test('the first doorstep reply accepts free requests and playful identities', () => {
+  assert.equal(classifyDoorstep('May I come in, please?'), 'permission');
+  assert.equal(classifyDoorstep('Could I come in, little cat?'), 'cat');
+  assert.equal(classifyDoorstep("I'm your new curtain."), 'curtain');
+  assert.equal(classifyDoorstep('The moon is beautiful.'), 'other');
+  const store = create(memory());
+  const saved = store.addAttempt({sceneId:'doorstep-permission',submittedText:'May I come in?',intent:'permission'});
+  assert.equal(saved.sceneId, 'doorstep-permission');
+  assert.equal(saved.intent, 'permission');
 });
 
 test('transfer requires a new piece of evidence and a challenge', () => {

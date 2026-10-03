@@ -12,7 +12,7 @@
     if (id === 'doorstep') return {
       node: oneOf(value.node, ['intro','door','owner','curtain','laugh','cat','pigeon'], 'intro'),
       catSeen: value.catSeen === true, sound: value.sound !== false, subtitles: value.subtitles !== false,
-      history: Array.isArray(value.history) ? value.history.slice(-30).filter(item => item && typeof item === 'object').map(item => ({mabel:text(item.mabel),you:text(item.you)})) : []
+      history: Array.isArray(value.history) ? value.history.slice(-30).filter(item => item && typeof item === 'object').map(item => ({mabel:text(item.mabel),you:text(item.you),free:item.free===true})) : []
     };
     const clean = {
       room: oneOf(value.room,['parlor','kitchen','greenhouse'],'parlor'),

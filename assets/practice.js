@@ -3,7 +3,8 @@
   'use strict';
   const KEY = 'moonlight-english:practice:v1';
   const DAY = 24 * 60 * 60 * 1000;
-  const INTENTS = ['evidence', 'information', 'accusation', 'other'];
+  const INTENTS = ['evidence', 'information', 'accusation', 'permission', 'cat', 'curtain', 'other'];
+  const TRANSFER_INTENTS = ['evidence', 'information', 'other'];
   const MODES = ['voice', 'typed'];
   const cleanText = (value, limit = 1200) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
   const copy = value => JSON.parse(JSON.stringify(value));
@@ -15,7 +16,7 @@
     if (!value || typeof value !== 'object') return null;
     const createdAt = iso(value.createdAt);
     const submittedText = cleanText(value.submittedText);
-    if (!createdAt || !submittedText || !['mabel-ribbon', 'pip-alibi'].includes(value.sceneId)) return null;
+    if (!createdAt || !submittedText || !['doorstep-permission', 'mabel-ribbon', 'pip-alibi'].includes(value.sceneId)) return null;
     return {
       id: cleanText(value.id, 100) || id('attempt'), sceneId: value.sceneId,
       rawTranscript: cleanText(value.rawTranscript), submittedText,
@@ -41,8 +42,8 @@
       rawTranscript: cleanText(value.rawTranscript), edited: value.edited === true,
       attemptCount: Math.max(0, Math.min(20, Math.trunc(Number(value.attemptCount) || 0))),
       firstSubmittedText: cleanText(value.firstSubmittedText),
-      firstIntent: INTENTS.includes(value.firstIntent) ? value.firstIntent : 'other',
-      assistanceUsed: value.assistanceUsed === true, intent: INTENTS.includes(value.intent) ? value.intent : 'other',
+      firstIntent: TRANSFER_INTENTS.includes(value.firstIntent) ? value.firstIntent : 'other',
+      assistanceUsed: value.assistanceUsed === true, intent: TRANSFER_INTENTS.includes(value.intent) ? value.intent : 'other',
       completedAt: complete ? completedAt : null
     };
   }
@@ -90,7 +91,7 @@
         item.attemptCount = Math.min(20, (item.attemptCount || 0) + 1);
         if (!item.firstSubmittedText) {
           item.firstSubmittedText = submittedText;
-          item.firstIntent = INTENTS.includes(value.intent) ? value.intent : 'other';
+          item.firstIntent = TRANSFER_INTENTS.includes(value.intent) ? value.intent : 'other';
         }
         if (value.assistanceUsed === true) item.assistanceUsed = true;
         write(); return copy(item);
@@ -98,7 +99,7 @@
       completeTransfer(transferId, value) {
         const item = data.transfers.find(entry => entry.id === transferId); if (!item) throw new Error('Transfer challenge not found');
         const submittedText = cleanText(value.submittedText); if (!submittedText) throw new Error('Invalid transfer completion');
-        Object.assign(item, {status: 'complete', submittedText, rawTranscript: cleanText(value.rawTranscript), inputMode: MODES.includes(value.inputMode) ? value.inputMode : 'typed', edited: value.edited === true, assistanceUsed: item.assistanceUsed || value.assistanceUsed === true, intent: INTENTS.includes(value.intent) ? value.intent : 'other', completedAt: new Date(now()).toISOString()});
+        Object.assign(item, {status: 'complete', submittedText, rawTranscript: cleanText(value.rawTranscript), inputMode: MODES.includes(value.inputMode) ? value.inputMode : 'typed', edited: value.edited === true, assistanceUsed: item.assistanceUsed || value.assistanceUsed === true, intent: TRANSFER_INTENTS.includes(value.intent) ? value.intent : 'other', completedAt: new Date(now()).toISOString()});
         write(); return copy(item);
       },
       next() { return copy(data.transfers.filter(item => item.status === 'pending').sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0] || null); },
@@ -124,6 +125,23 @@
     if (contradiction) return 'evidence';
     if (/\b(ribbon|label|tag|tasting|party|host|name|greenhouse)\b/.test(text)) return 'information';
     return 'other';
+  }
+
+  function classifyDoorstep(value) {
+    const text = normalized(value);
+    if (!text) return 'other';
+    const request = /\b(may i|can i|could i|would you let me|let me (?:come )?in|come in|come inside|enter|permission|open the door)\b/.test(text);
+    if (request && /\b(cat|kitty|kitten|owner|sir)\b/.test(text)) return 'cat';
+    if (/\b(curtain|drape|window covering)\b/.test(text) || /\b(new|your) curtain\b/.test(text)) return 'curtain';
+    if (request) return 'permission';
+    return 'other';
+  }
+
+  function doorstepFeedback(intent) {
+    if (intent === 'cat') return '你把请求直接交给了真正的屋主，剧情会立刻记住这个判断。';
+    if (intent === 'curtain') return '这句话有角色感。Mabel 决定认真检查你这块“新窗帘”。';
+    if (intent === 'permission') return '请求很清楚。May I come in? 和 Can I come in? 都能自然推动对话。';
+    return '我还没听出你是在请求进门。可以从 May I…、Can I… 或一个好笑的身份开始。';
   }
 
   function classifyTransfer(value) {
@@ -190,5 +208,5 @@
     return () => lifecycle.abort();
   }
 
-  global.MoonlightPractice = {create, sanitize, key: KEY, classifyMabel, classifyTransfer, mabelFeedback, bindSpeech, registerTools};
+  global.MoonlightPractice = {create, sanitize, key: KEY, classifyDoorstep, classifyMabel, classifyTransfer, doorstepFeedback, mabelFeedback, bindSpeech, registerTools};
 })(globalThis);
